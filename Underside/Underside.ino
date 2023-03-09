@@ -3,7 +3,8 @@
 bool timer_100Hz = false;
 
 void setup() {
-  Serial1.begin(115200);
+  Serial.begin(460800);
+  Serial1.begin(460800);
 
   TimerTcc0.initialize(10000);  //10,000us=100Hz
   TimerTcc0.attachInterrupt(timerIsr);
@@ -14,6 +15,11 @@ void loop() {
     timer_100Hz = false;
     Serial1.print("1013.25,23.4,1.23,1.23\n");
     //気圧[hPa],温度[deg],気圧高度[m],超音波高度[m]
+  }
+
+  if (Serial1.available()) {
+    char c = (char)Serial1.read();
+    Serial.write(c);
   }
 }
 
