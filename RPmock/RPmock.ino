@@ -1,32 +1,45 @@
 // raspberry pi poco
 
 //under serial1
-//RP 1 -> underRX
-//RP 2 <- underTX
+//RP GP0 -> underRX
+//RP GP1 <- underTX
 
 //air serial2
-//RP 1 -> airRX
-//RP 2 <- airTX
+//RP GP8 -> airRX
+//RP GP9 <- airTX
+
+enum {
+  LINEAR,
+  DIVE
+} mode = LINEAR;
 
 char sendUART_BUF[256];
 
-volatile float air_dps_altitude_m = 71;
-volatile float air_dps_pressure_hPa = 1013.0;
-volatile float air_dps_temperature_deg = 30;
-volatile float air_sdp_airspeed_ms = 5.0;
-volatile float air_sdp_differentialPressure_Pa = 1013.0;
-volatile float air_sdp_temperature_deg = 30;
+const float air_dps_pressure_hPa = 1013.0;
+const float air_dps_temperature_deg = 30;
+const float air_sdp_differentialPressure_Pa = 1013.0;
+const float air_sdp_temperature_deg = 30;
 
-volatile float under_dps_pressure_hPa = 1013.0;
-volatile float under_dps_temperature_deg = 30;
-volatile float under_dps_altitude_m = 70;
-volatile float under_urm_altitude_m = 0.5;
+const float under_dps_pressure_hPa = 1013.0;
+const float under_dps_temperature_deg = 30;
 
-volatile float true_m = 10.6;
-unsigned long int last_send_time = 0;
 
-int loop_count = 0;
-int flag_landed = false;
+const float const_air_dps_m = 71;
+float air_dps_altitude_m = const_air_dps_m;
+float air_sdp_airspeed_ms = 10.2;
+
+
+const float const_under_dps_m = 70;
+float under_dps_altitude_m = const_under_dps_m;
+float under_urm_altitude_m = 0.6;
+
+const float const_platform_alt_m = 10.6;
+float true_m = const_platform_alt_m;
+
+
+unsigned long int loop_count = 180;
+double down_count = 0;
+bool flag_landed = false;
 
 //乱数生成
 float randNumber;
@@ -41,32 +54,53 @@ void setup() {
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
+  static unsigned long int last_send_time = 0;
   if (millis() - last_send_time > 40) {
     last_send_time = millis();
 
-    //乱数生成
+    loop_count++;
+
     randNumber = random(92, 112);
     air_sdp_airspeed_ms = randNumber / 10;
-
     Serial.println(air_sdp_airspeed_ms);
 
     if (millis() < 15000) {
+      // 離陸前
       under_urm_altitude_m = 0.6;
     } else if (!flag_landed) {
-      true_m -= 0.006799;
-      air_dps_altitude_m -= 0.006800;
-      under_dps_altitude_m -= 0.006800;
-    } else {
-      if (true_m <= 0.006799) {
-        flag_landed = true;
+      // 離陸後 ~ 着水前
+
+      // true_mの更新
+      if (mode == LINEAR) {
+        true_m -= 0.006799;
+      } else if (mode == DIVE) {
+        down_count = loop_count / 180;
+        true_m = 10 / down_count;
       }
+
+      // 気圧高度の更新
+      air_dps_altitude_m = (true_m - const_platform_alt_m) * 0.94 + const_air_dps_m;
+      under_dps_altitude_m = (true_m - const_platform_alt_m) * 0.96 + const_under_dps_m;
+
+      // 超音波高度の更新
       if (true_m <= 5.0) {
         under_urm_altitude_m = true_m;
       } else {
         under_urm_altitude_m = 10.0;
       }
+
+      // 着水判定
+      if (true_m <= 0.006799) {
+        flag_landed = true;
+      }
+    } else {
+      // 着水後
+      // 更新無し
     }
+
+    //超音波にノイズのせる
+    // 1/20(TBD)の確率で外れ値を0.2~1.5秒連続して出力する
+
 
     //under
     //気圧[hPa],温度[deg],気圧高度[m],超音波高度[m]
