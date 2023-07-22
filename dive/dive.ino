@@ -29,7 +29,6 @@ unsigned long int last_send_time = 0;
 unsigned long int loop_count = 180;
 double down_count = 0;
 unsigned long int urm_count = 0;
-int flag = true;
 
 //乱数生成
 float randNumber;

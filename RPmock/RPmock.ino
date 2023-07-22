@@ -23,11 +23,10 @@ volatile float under_dps_altitude_m = 70;
 volatile float under_urm_altitude_m = 0.5;
 
 volatile float true_m = 10.5;
-
 unsigned long int last_send_time = 0;
 
 int loop_count = 0;
-int flag = true;
+int flag = false;
 
 //乱数生成
 float randNumber;
@@ -55,11 +54,18 @@ void loop() {
     if(millis() < 15000){
       under_urm_altitude_m = 0.5;
     }
+    else if(flag){
+      air_dps_altitude_m = 0;
+      under_dps_altitude_m = 0;
+      under_urm_altitude_m = 0;
+    }
     else{            
         true_m -= 0.006799;
         air_dps_altitude_m -= 0.006800;
         under_dps_altitude_m -= 0.006800;
-  
+        if(true_m <= 0.006799){
+          flag = true;
+        }
         if(true_m <= 5.0){
           under_urm_altitude_m = true_m;
         }else{
