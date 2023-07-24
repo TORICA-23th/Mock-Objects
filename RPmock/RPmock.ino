@@ -49,15 +49,18 @@ void setup() {
   Serial1.begin(460800);
   Serial2.begin(460800);
 
+  pinMode(LED_BUILTIN, OUTPUT);
+
   //乱数生成
   randomSeed(analogRead(0));
 }
 
 void loop() {
   static unsigned long int last_send_time = 0;
-  if (millis() - last_send_time > 40) {
+  if (millis() - last_send_time > 33) {
     last_send_time = millis();
 
+    digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
     loop_count++;
 
     randNumber = random(92, 112);
@@ -96,11 +99,25 @@ void loop() {
     } else {
       // 着水後
       // 更新無し
+        under_urm_altitude_m = true_m;
     }
 
     //超音波にノイズのせる
-    // 1/20(TBD)の確率で外れ値を0.2~1.5秒連続して出力する
-
+    // 1/100(TBD)の確率で外れ値を0.2~1.5秒連続して出力する
+    static int noise_count = 0;
+    static float noise_val = 0;
+    if (noise_count > 0) {
+      noise_count--;
+      under_urm_altitude_m = noise_val;
+    } else {
+      if (random(0, 100) == 1) {
+        noise_count = random(6, 50);
+        noise_val = (float)random(0, 1000) / 100.0;
+        if (noise_val > 5) {
+          noise_val = 10;
+        }
+      }
+    }
 
     //under
     //気圧[hPa],温度[deg],気圧高度[m],超音波高度[m]
