@@ -103,15 +103,15 @@ void loop() {
     }
 
     //超音波にノイズのせる
-    // 1/100(TBD)の確率で外れ値を0.2~1.5秒連続して出力する
+    // 1/150(TBD)の確率で外れ値を0.2~1.1秒連続して出力する
     static int noise_count = 0;
     static float noise_val = 0;
     if (noise_count > 0) {
       noise_count--;
       under_urm_altitude_m = noise_val;
     } else {
-      if (random(0, 100) == 1) {
-        noise_count = random(6, 50);
+      if (random(0, 150) == 1) {
+        noise_count = random(6, 36);
         noise_val = (float)random(0, 1000) / 100.0;
         if (noise_val > 5) {
           noise_val = 10;
